@@ -33,6 +33,7 @@ At this point you should be able to run and edit the base code provided.
 | `experiments/baseline.py`           | contains the code to reproduce the baseline experiment (see point 1. of the project)                            |
 | `experiments/domain_disentangle.py` | contains the skeleton code to implement the domain disentanglement experiment (see point 2. of the project)     |
 | `experiments/clip_disentangle.py`   | contains the skeleton code to implement the disentanglement experiment using CLIP (see point 4. of the project) |
+| `experiments/domain_generalization.py`   | contains the skeleton code to implement the domain generalization |
 
 ## Base Command Line Arguments
 | Argument &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; | Description                                                                                                                                                                                                                                                        |
