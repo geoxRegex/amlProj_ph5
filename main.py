@@ -4,6 +4,7 @@ import torch
 from experiments.baseline import BaselineExperiment
 from experiments.clip_disentangle import CLIPDisentangleExperiment
 from experiments.domain_disentangle import DomainDisentangleExperiment
+from experiments.domain_generalization import DomainGeneralizationExperiment
 from load_data import build_splits_baseline, build_splits_domain_disentangle, build_splits_clip_disentangle
 from parse_args import parse_arguments
 
@@ -22,6 +23,9 @@ def setup_experiment(opt):
         experiment = CLIPDisentangleExperiment( opt )
         train_loader, validation_loader, test_loader = build_splits_clip_disentangle( opt )
 
+    elif opt['experiment'] == 'domain_generalization':
+        experiment = DomainGeneralization( opt ) #TODO
+        train_loader, validation_loader, test_loader = build_splits_domain_generalization( opt )
     else:
         raise ValueError( 'Experiment not yet supported.' )
 
@@ -242,7 +246,64 @@ def main(opt):
 
                 iteration += 2
                 if iteration > opt['max_iterations']:
-                    break
+                    break 
+        
+        elif opt['experiment'] == 'domain_generaization':  
+
+            # Restore last checkpoint
+            if os.path.exists( f'{opt["output_path"]}/last_checkpoint.pth' ):
+                iteration, best_accuracy, total_train_loss = experiment.load_checkpoint(
+                    f'{opt["output_path"]}/last_checkpoint.pth' )
+            else:
+                logging.info( opt )
+
+            # Train loop
+            iteration = 0
+            best_accuracy = 0
+            total_train_loss = 0
+            weight = torch.tensor( [1.0, 0.5, 0.3, 0.05, 0.05, 1.0] )
+            logging.info(
+                f'WEIGHT: {weight}' )
+            train_loader_iterator = iter(train_loader)
+            test_loader_iterator = iter(test_loader)
+            while iteration < opt['max_iterations']:
+                
+                try:
+                    data = next(train_loader_iterator)
+                except StopIteration:
+                    train_loader_iterator = iter(train_loader)
+                    data = next(train_loader_iterator)
+
+                total_train_loss += experiment.train_iteration( data, train=True, weight=weight )
+
+                try:
+                    data = next(test_loader_iterator)
+                except StopIteration:
+                    test_loader_iterator = iter(test_loader)
+                    data = next(test_loader_iterator)
+                
+                total_train_loss += experiment.train_iteration( data, train=False, weight=weight )
+
+
+                if iteration % opt['print_every'] == 0:
+                    logging.info( f'[TRAIN - {iteration}] Loss: {total_train_loss / (iteration + 1)}' )
+
+                if iteration % opt['validate_every'] == 0:
+                    # Run validation
+                    val_accuracy, val_loss = experiment.validate( validation_loader )
+                    logging.info(
+                        f'[VAL - {iteration}] Loss: {val_loss} | Accuracy: {(100 * val_accuracy):.2f}' )
+                    if val_accuracy > best_accuracy:
+                        best_accuracy = val_accuracy
+                        experiment.save_checkpoint( f'{opt["output_path"]}/best_checkpoint.pth', iteration,
+                                                    best_accuracy, total_train_loss )
+                    experiment.save_checkpoint( f'{opt["output_path"]}/last_checkpoint.pth', iteration,
+                                                best_accuracy,
+                                                total_train_loss )
+
+                iteration += 2
+                if iteration > opt['max_iterations']:
+                    break   
         
 
     # Test

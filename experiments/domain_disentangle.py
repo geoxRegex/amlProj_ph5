@@ -1,5 +1,6 @@
 import torch
 from models.base_model import DomainDisentangleModel
+from models.base_model import DomainGeneralizationModel
 
 
 def myEntropyLoss(outputs):
