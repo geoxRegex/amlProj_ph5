@@ -4,7 +4,7 @@ from models.base_model import DomainGeneralizationModel
 
 
 
-def MyLossEntropy(opt):
+def myEntropyLoss(opt):
     return torch.sum(-func.softmax(opt, 1) * func.log_softmax(opt, 1), 1).mean()
 
 
